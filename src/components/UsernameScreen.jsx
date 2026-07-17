@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-const MAX_FILE_SIZE_BYTES = 3 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PHOTO_DIMENSION = 1280;
 const MAX_PHOTO_DATA_URL_LENGTH = 500 * 1024;
 
@@ -94,7 +94,9 @@ export default function UsernameScreen({ onStart }) {
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setFileError("Image must be 10MB or smaller.");
+      setFileError(
+        `Image must be ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB or smaller.`,
+      );
       setPhotoData(null);
       return;
     }
