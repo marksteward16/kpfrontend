@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-const MAX_FILE_SIZE_BYTES = 3 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PHOTO_DIMENSION = 1280;
 const MAX_PHOTO_DATA_URL_LENGTH = 500 * 1024;
 const HEIC_MIME_TYPES = new Set([
