@@ -14,7 +14,10 @@ const socket = io(socketUrl, {
 
 // Handle "Session ID unknown" errors by forcing a fresh connection
 socket.on("connect_error", (error) => {
-  if (error.message === "Session ID unknown" || error.data?.content?.message === "Session ID unknown") {
+  if (
+    error.message === "Session ID unknown" ||
+    error.data?.content?.message === "Session ID unknown"
+  ) {
     console.warn("[socket] Session ID unknown - forcing fresh connection");
     socket.disconnect();
     setTimeout(() => {
