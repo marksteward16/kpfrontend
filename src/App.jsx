@@ -184,19 +184,41 @@ function App() {
     });
     setChatHistory([]);
     clearResumeSession();
-    if (!socket.connected) socket.connect();
-    socket.emit("find_chat", {
-      username: chosenUsername,
-      photoData: chosenPhotoData || null,
-    });
-    setScreen(SCREEN.WAITING);
+
+    // Ensure socket is connected before emitting find_chat
+    if (socket.connected) {
+      socket.emit("find_chat", {
+        username: chosenUsername,
+        photoData: chosenPhotoData || null,
+      });
+      setScreen(SCREEN.WAITING);
+    } else {
+      socket.connect();
+      socket.once("connect", () => {
+        socket.emit("find_chat", {
+          username: chosenUsername,
+          photoData: chosenPhotoData || null,
+        });
+        setScreen(SCREEN.WAITING);
+      });
+    }
   }
 
   function handleChatEnded() {
     clearResumeSession();
     setChatHistory([]);
-    socket.emit("find_chat", { username, photoData });
-    setScreen(SCREEN.WAITING);
+
+    // Ensure socket is connected before emitting find_chat
+    if (socket.connected) {
+      socket.emit("find_chat", { username, photoData });
+      setScreen(SCREEN.WAITING);
+    } else {
+      socket.connect();
+      socket.once("connect", () => {
+        socket.emit("find_chat", { username, photoData });
+        setScreen(SCREEN.WAITING);
+      });
+    }
   }
 
   return (
