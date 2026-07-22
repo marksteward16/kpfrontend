@@ -3,6 +3,37 @@ import { useRef, useState } from "react";
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PHOTO_DIMENSION = 1280;
 const MAX_PHOTO_DATA_URL_LENGTH = 500 * 1024;
+const HEIC_MIME_TYPES = new Set([
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+]);
+
+function isHeicFile(file) {
+  const lowerName = (file.name || "").toLowerCase();
+  return HEIC_MIME_TYPES.has(file.type) || /\.(heic|heif)$/i.test(lowerName);
+}
+
+async function convertHeicToJpegFile(file) {
+  const { default: heic2any } = await import("heic2any");
+  const converted = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: 0.9,
+  });
+
+  const outputBlob = Array.isArray(converted) ? converted[0] : converted;
+  if (!(outputBlob instanceof Blob)) {
+    throw new Error("HEIC conversion failed");
+  }
+
+  const outputName = (file.name || "photo")
+    .replace(/\.(heic|heif)$/i, "")
+    .concat(".jpg");
+
+  return new File([outputBlob], outputName, { type: "image/jpeg" });
+}
 
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -87,7 +118,8 @@ export default function UsernameScreen({ onStart }) {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    const hasImageMime = file.type.startsWith("image/");
+    if (!hasImageMime && !isHeicFile(file)) {
       setFileError("Please choose an image file.");
       setPhotoData(null);
       return;
@@ -102,10 +134,15 @@ export default function UsernameScreen({ onStart }) {
     }
 
     try {
-      let dataUrl = await toOptimizedDataUrl(file);
+      let normalizedFile = file;
+      if (isHeicFile(file)) {
+        normalizedFile = await convertHeicToJpegFile(file);
+      }
+
+      let dataUrl = await toOptimizedDataUrl(normalizedFile);
 
       if (typeof dataUrl !== "string" || dataUrl.length === 0) {
-        const fallback = await toDataUrl(file);
+        const fallback = await toDataUrl(normalizedFile);
         dataUrl = typeof fallback === "string" ? fallback : "";
       }
 
@@ -204,7 +241,7 @@ export default function UsernameScreen({ onStart }) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif,image/heic,image/heif"
                 onChange={handlePhotoChange}
                 className="hidden"
               />
