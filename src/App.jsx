@@ -175,6 +175,17 @@ function App() {
     };
   }, []);
 
+  function requestFindChat(nextUsername, nextPhotoData) {
+    socket.emit("find_chat", {
+      username: nextUsername,
+      photoData: nextPhotoData || null,
+    });
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+  }
+
   function handleStart(chosenUsername, chosenPhotoData) {
     setUsername(chosenUsername);
     setPhotoData(chosenPhotoData || null);
@@ -184,41 +195,15 @@ function App() {
     });
     setChatHistory([]);
     clearResumeSession();
-
-    // Ensure socket is connected before emitting find_chat
-    if (socket.connected) {
-      socket.emit("find_chat", {
-        username: chosenUsername,
-        photoData: chosenPhotoData || null,
-      });
-      setScreen(SCREEN.WAITING);
-    } else {
-      socket.connect();
-      socket.once("connect", () => {
-        socket.emit("find_chat", {
-          username: chosenUsername,
-          photoData: chosenPhotoData || null,
-        });
-        setScreen(SCREEN.WAITING);
-      });
-    }
+    setScreen(SCREEN.WAITING);
+    requestFindChat(chosenUsername, chosenPhotoData);
   }
 
   function handleChatEnded() {
     clearResumeSession();
     setChatHistory([]);
-
-    // Ensure socket is connected before emitting find_chat
-    if (socket.connected) {
-      socket.emit("find_chat", { username, photoData });
-      setScreen(SCREEN.WAITING);
-    } else {
-      socket.connect();
-      socket.once("connect", () => {
-        socket.emit("find_chat", { username, photoData });
-        setScreen(SCREEN.WAITING);
-      });
-    }
+    setScreen(SCREEN.WAITING);
+    requestFindChat(username, photoData);
   }
 
   return (
