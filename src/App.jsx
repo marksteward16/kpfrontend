@@ -147,6 +147,11 @@ function App() {
       clearResumeSession();
     }
 
+    function onResumeFailed() {
+      console.warn("[app] Resume failed - clearing stale session");
+      clearResumeSession();
+    }
+
     function onConnect() {
       const resume = loadResumeSession();
       if (resume) {
@@ -158,6 +163,7 @@ function App() {
     socket.on("waiting", onWaiting);
     socket.on("chat_started", onChatStarted);
     socket.on("resume_success", onResumeSuccess);
+    socket.on("resume_failed", onResumeFailed);
     socket.on("chat_ended", onChatEnded);
 
     if (!socket.connected) {
@@ -171,6 +177,7 @@ function App() {
       socket.off("waiting", onWaiting);
       socket.off("chat_started", onChatStarted);
       socket.off("resume_success", onResumeSuccess);
+      socket.off("resume_failed", onResumeFailed);
       socket.off("chat_ended", onChatEnded);
     };
   }, []);

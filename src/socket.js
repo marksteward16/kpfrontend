@@ -9,21 +9,31 @@ const socket = io(socketUrl, {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: Infinity,
+  reconnectionDelayMax: 3000,
 });
 
-// Handle "Session ID unknown" errors by forcing a fresh connection
+// Handle all connection errors gracefully
 socket.on("connect_error", (error) => {
+  console.warn("[socket] Connection error:", error.message);
+
+  // If resume failed or session is unknown, clear it and force fresh connection
   if (
-    error.message === "Session ID unknown" ||
-    error.data?.content?.message === "Session ID unknown"
+    error.message?.includes("Session ID unknown") ||
+    error.message?.includes("ECONNREFUSED") ||
+    error.message?.includes("closed before")
   ) {
-    console.warn("[socket] Session ID unknown - forcing fresh connection");
-    socket.disconnect();
+    console.warn("[socket] Clearing stale session and reconnecting...");
+    localStorage.removeItem("koopals_resume_session");
     setTimeout(() => {
-      socket.connect();
+      socket.disconnect();
+      setTimeout(() => socket.connect(), 500);
     }, 1000);
   }
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("[socket] Disconnected:", reason);
 });
 
 export default socket;
