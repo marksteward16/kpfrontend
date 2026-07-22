@@ -28,8 +28,10 @@ export default function ChatRoom({
   const [viewerPhoto, setViewerPhoto] = useState(null);
   const [viewerLabel, setViewerLabel] = useState("");
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
+  const hasMountedRef = useRef(false);
 
   useEffect(() => {
     const safeInitialMessages = Array.isArray(initialMessages)
@@ -117,8 +119,19 @@ export default function ChatRoom({
 
   // Auto-scroll to latest message or typing indicator
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, partnerTyping]);
+
+  useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) {
+      inputRef.current?.focus({ preventScroll: true });
+    }
+  }, []);
 
   const emitStopTyping = useCallback(() => {
     if (isTypingRef.current) {
@@ -182,7 +195,7 @@ export default function ChatRoom({
           : "Regular chat only: photo reveal is disabled for this session.";
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="h-dvh overflow-hidden bg-gray-950 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
         <div>
@@ -205,7 +218,7 @@ export default function ChatRoom({
       </header>
 
       {/* Messages */}
-      <main className="flex-1 max-w-6xl mx-auto w-full overflow-y-auto px-4 py-6 space-y-1.5">
+      <main className="flex-1 min-h-0 max-w-6xl mx-auto w-full overflow-y-auto overscroll-contain px-4 py-6 space-y-1.5">
         {/* System message */}
         <div className="flex justify-center">
           <span className="text-xs text-gray-600 bg-gray-900 px-3 py-1 rounded-full">
@@ -311,9 +324,9 @@ export default function ChatRoom({
         {partnerTyping && !ended && (
           <div className="flex items-start gap-2 animate-fade-up animate-duration-200">
             <div className="bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce animate-delay-none" />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce animate-delay-150" />
+              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce animate-delay-300" />
             </div>
           </div>
         )}
@@ -335,12 +348,12 @@ export default function ChatRoom({
             <div className="flex w-full items-center gap-2 px-3 sm:px-4">
               <input
                 type="text"
+                ref={inputRef}
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Type a message…"
                 maxLength={500}
                 className="min-w-0 flex-1 bg-gray-800 text-white placeholder-gray-500 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                autoFocus
               />
               <button
                 type="submit"
